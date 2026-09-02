@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accueil - Banc KLX</title>
+    <!-- Import de Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { 
+            background-color: #f4f7f6; 
+            height: 100vh; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            margin: 0;
+            font-family: system-ui, -apple-system, sans-serif;
+        }
+        .hero-card { 
+            background: white; 
+            padding: 3rem 2rem; 
+            border-radius: 20px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.05); 
+            max-width: 600px; 
+            text-align: center; 
+        }
+        .icon-wrapper { 
+            width: 90px; 
+            height: 90px; 
+            background: #f8f9fa; 
+            border-radius: 50%; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 3rem; 
+            margin: 0 auto 1.5rem; 
+        }
+        .btn-custom { padding: 12px 30px; font-weight: 500; transition: transform 0.2s; }
+        .btn-custom:hover { transform: translateY(-2px); }
+    </style>
+</head>
+<body>
+
+    <div class="container d-flex justify-content-center">
+        <div class="hero-card">
+            <div class="icon-wrapper">📚</div>
+            <h1 class="fw-bold mb-3">Documentation KLX</h1>
+            <p class="text-muted fs-5 mb-5">
+                Accédez à la documentation des TP et gérez vos sessions d'apprentissage en toute sécurité grâce à l'authentification biométrique (Passkey).
+            </p>
+            
+            <div class="d-grid gap-3 d-sm-flex justify-content-sm-center">
+                <!-- Adapte les liens (href) selon tes vraies routes Flask -->
+                <a href="/login" class="btn btn-primary btn-lg rounded-pill btn-custom">
+                    🔒 Se connecter
+                </a>
+                <a href="/register" class="btn btn-outline-secondary btn-lg rounded-pill btn-custom">
+                    ⚙️ Créer un compte
+                </a>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

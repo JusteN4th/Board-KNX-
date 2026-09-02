@@ -11,13 +11,15 @@ from webauthn import (
     verify_registration_response,
     generate_authentication_options,
     verify_authentication_response,
+    options_to_json,
 )
 from webauthn.helpers import bytes_to_base64url, base64url_to_bytes
 from webauthn.helpers.structs import PublicKeyCredentialDescriptor
 
 app = Flask(__name__)
 app.secret_key = 'une_cle_secrete_tres_complexe_pour_les_sessions'
-RP_ID = "192.168.2.100"
+RP_ID = "projetdocuyanisnathan.fr"
+ORIGIN = "https://projetdocuyanisnathan.fr"
 
 
 # ---------------------------------------------------------------------------
@@ -123,7 +125,7 @@ def webauthn_register_options():
     )
 
     session['challenge'] = bytes_to_base64url(options.challenge)
-    return jsonify(json.loads(options.json()))
+    return options_to_json(options), 200, {'Content-Type': 'application/json'}
 
 
 @app.route('/api/webauthn/register/verify', methods=['POST'])
@@ -283,7 +285,7 @@ def webauthn_login_options():
 
     cursor.close()
     conn.close()
-    return jsonify(json.loads(options.json()))
+    return options_to_json(options), 200, {'Content-Type': 'application/json'}
 
 
 @app.route('/api/webauthn/login/verify', methods=['POST'])
@@ -343,9 +345,21 @@ def login_page():
 # ---------------------------------------------------------------------------
 @app.route('/docs')
 def docs_page():
-    # En production, on vérifierait ici si l'utilisateur est bien connecté (session['user'])
-    return render_template('docs.html')
+    # En production, on vérifierait ici si l'utilisateur est bien connecté
+    # if 'user' not in session:
+    #     return redirect('/login')
 
+    conn = get_db_connection()
+    # Le paramètre dictionary=True permet de récupérer les résultats sous forme de dictionnaire
+    cursor = conn.cursor(dictionary=True) 
+    
+    # On récupère tous les modules de la base de données
+    cursor.execute("SELECT * FROM modules")
+    modules = cursor.fetchall()
+    
+    cursor.close()
+    conn.close()
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    # On envoie la variable 'modules' au template HTML
+    return render_template('docs.html', modules=modules)
+
