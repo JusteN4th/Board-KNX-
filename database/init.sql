@@ -35,3 +35,8 @@ CREATE TABLE IF NOT EXISTS documentation (
 
 -- Ajout d'un compte formateur par défaut pour vos tests
 INSERT INTO users (username, role) VALUES ('formateur_test', 'admin');
+-- Ajout de modules pour tester l'interface
+INSERT INTO modules (name, description) VALUES 
+('MODULE STATION MÉTÉO MD1A3028', 'Assigné pour TP : TP #12 Câblage KNX'),
+('MODULE DALI GATEWAY MD1A3020', 'Assigné pour TP : TP #12 Câblage KNX'),
+('MODULE VARIATEUR MD1A3046', 'Assigné pour TP : TP #14 Paramétrage');

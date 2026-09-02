@@ -30,7 +30,8 @@ def get_db_connection():
         host=os.environ.get('DB_HOST', 'db'),
         user=os.environ.get('DB_USER', 'klx_user'),
         password=os.environ.get('DB_PASSWORD', 'klx_password'),
-        database=os.environ.get('DB_NAME', 'klx_doc_db')
+        database=os.environ.get('DB_NAME', 'klx_doc_db'),
+	charset='utf8mb4'
     )
 
 
@@ -39,13 +40,15 @@ def get_db_connection():
 # ---------------------------------------------------------------------------
 @app.route('/')
 def accueil():
-    return """
-    <h1>Bienvenue sur l'IHM du Banc KLX</h1>
-    <ul>
-        <li><a href="/admin/creer-apprenti">Espace Formateur : Créer un accès Apprenti</a></li>
-        <li><a href="/login">Espace Apprenti : Se connecter</a></li>
-    </ul>
-    """
+    return render_template('index.html')
+
+
+# ---------------------------------------------------------------------------
+# Page de création de compte direct (UI Bootstrap)
+# ---------------------------------------------------------------------------
+@app.route('/register')
+def register():
+    return render_template('register.html')
 
 
 # ---------------------------------------------------------------------------
@@ -187,18 +190,24 @@ def enroll():
         username = user[1]
 
         return f"""
-        <html>
+        <!DOCTYPE html>
+        <html lang="fr">
         <head>
+            <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Enrôlement - Banc KLX</title>
-            <script src="https://unpkg.com/@github/webauthn-json/dist/browser-global/webauthn-json.browser-global.js"></script>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <script src="https://cdn.jsdelivr.net/npm/@github/webauthn-json/dist/browser-global/webauthn-json.browser-global.js"></script>
         </head>
-        <body style="font-family: Arial; text-align: center; margin-top: 50px;">
-            <h2>Bienvenue {username} !</h2>
-            <p>Pour accéder à la documentation des TP sans mot de passe, vous devez créer une clé d'accès.</p>
-            <button id="registerBtn" style="padding: 15px 30px; font-size: 16px;">
-                🔒 Créer ma clé d'accès (Passkey)
-            </button>
+        <body style="background-color: #f4f7f6; height: 100vh; display: flex; align-items: center; justify-content: center; margin: 0;">
+            <div class="card text-center p-4 border-0 shadow" style="border-radius: 15px; max-width: 400px; width: 100%;">
+                <div style="font-size: 3rem; margin-bottom: 1rem;">👋</div>
+                <h3 class="mb-3">Bienvenue {username} !</h3>
+                <p class="text-muted mb-4">Pour accéder à la documentation des TP sans mot de passe, vous devez créer une clé d'accès sécurisée.</p>
+                <button id="registerBtn" class="btn btn-success w-100 py-2 fs-5 rounded-pill">
+                    🔒 Créer ma clé d'accès
+                </button>
+            </div>
 
             <script>
                 document.getElementById('registerBtn').addEventListener('click', async () => {{
@@ -339,7 +348,59 @@ def webauthn_login_verify():
 def login_page():
     return render_template('login.html')
 
+# ---------------------------------------------------------------------------
+# Ajouter un module dynamique depuis l'interface
+# ---------------------------------------------------------------------------
+@app.route('/ajouter-module', methods=['POST'])
+def ajouter_module():
+    # 1. Récupération des textes
+    name = request.form.get('name')
+    description = request.form.get('description')
+    
+    # 2. Récupération des fichiers
+    image_file = request.files.get('image')
+    doc_file = request.files.get('document')
 
+    if image_file and doc_file:
+        # Sécurisation des noms de fichiers
+        img_filename = secure_filename(image_file.filename)
+        doc_filename = secure_filename(doc_file.filename)
+        
+        # Création des chemins de sauvegarde
+        img_save_path = os.path.join('static', 'img', img_filename)
+        doc_save_path = os.path.join('static', 'docs', doc_filename)
+        
+        # S'assurer que les dossiers existent
+        os.makedirs(os.path.dirname(img_save_path), exist_ok=True)
+        os.makedirs(os.path.dirname(doc_save_path), exist_ok=True)
+        
+        # Sauvegarde physique sur le serveur
+        image_file.save(img_save_path)
+        doc_file.save(doc_save_path)
+        
+        # 3. Enregistrement dans la base de données
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Insérer le module
+        cursor.execute(
+            "INSERT INTO modules (name, description, image_path) VALUES (%s, %s, %s)",
+            (name, description, f"/static/img/{img_filename}")
+        )
+        module_id = cursor.lastrowid # Récupère l'ID du module tout juste créé
+        
+        # Lier la documentation
+        cursor.execute(
+            "INSERT INTO documentation (module_id, title, file_path) VALUES (%s, %s, %s)",
+            (module_id, f"Doc {name}", f"/static/docs/{doc_filename}")
+        )
+        
+        conn.commit()
+        cursor.close()
+        conn.close()
+
+    # Recharge la page automatiquement pour afficher le nouveau module
+    return redirect('/docs')
 # ---------------------------------------------------------------------------
 # Page de documentation (accessible une fois connecté)
 # ---------------------------------------------------------------------------
@@ -352,14 +413,20 @@ def docs_page():
     conn = get_db_connection()
     # Le paramètre dictionary=True permet de récupérer les résultats sous forme de dictionnaire
     cursor = conn.cursor(dictionary=True) 
-    
+    # Nouvelle requête avec une jointure
+    requete = """
+        SELECT m.name, m.description, m.image_path, d.file_path AS doc_path 
+        FROM modules m 
+        LEFT JOIN documentation d ON m.id = d.module_id
+    """
     # On récupère tous les modules de la base de données
-    cursor.execute("SELECT * FROM modules")
+    cursor.execute(requete)
     modules = cursor.fetchall()
-    
     cursor.close()
     conn.close()
 
     # On envoie la variable 'modules' au template HTML
     return render_template('docs.html', modules=modules)
 
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
