@@ -3,7 +3,7 @@ import io
 import os
 import uuid
 
-from flask import Flask, request, send_file, jsonify, session, render_template
+from flask import Flask, request, send_file, jsonify, session, render_template, redirect
 import mysql.connector
 import qrcode
 from webauthn import (
@@ -15,7 +15,7 @@ from webauthn import (
 )
 from webauthn.helpers import bytes_to_base64url, base64url_to_bytes
 from webauthn.helpers.structs import PublicKeyCredentialDescriptor
-
+from werkzeug.utils import secure_filename
 app = Flask(__name__)
 app.secret_key = 'une_cle_secrete_tres_complexe_pour_les_sessions'
 RP_ID = "projetdocuyanisnathan.fr"
@@ -347,7 +347,22 @@ def webauthn_login_verify():
 @app.route('/login')
 def login_page():
     return render_template('login.html')
+# ---------------------------------------------------------------------------
+# Supprimer un module
+# ---------------------------------------------------------------------------
+@app.route('/supprimer-module/<int:module_id>', methods=['POST'])
+def supprimer_module(module_id):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    # La suppression du module entraînera la suppression en cascade de sa doc
+    cursor.execute("DELETE FROM modules WHERE id = %s", (module_id,))
+    
+    conn.commit()
+    cursor.close()
+    conn.close()
 
+    return redirect('/docs')
 # ---------------------------------------------------------------------------
 # Ajouter un module dynamique depuis l'interface
 # ---------------------------------------------------------------------------
@@ -415,7 +430,7 @@ def docs_page():
     cursor = conn.cursor(dictionary=True) 
     # Nouvelle requête avec une jointure
     requete = """
-        SELECT m.name, m.description, m.image_path, d.file_path AS doc_path 
+        SELECT m.id, m.name, m.description, m.image_path, d.file_path AS doc_path 
         FROM modules m 
         LEFT JOIN documentation d ON m.id = d.module_id
     """
