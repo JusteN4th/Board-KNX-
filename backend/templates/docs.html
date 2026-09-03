@@ -224,30 +224,26 @@
 </head>
 <body>
 
+<!-- Barre latérale -->
     <aside class="sidebar">
         <div class="brand-logo">
-            <i class="fa-solid fa-leaf"></i> Schneider<br>Electric
+            <i class="fa-solid fa-gear"></i> Banc essaie<br>KNX
         </div>
         
-        <a href="#" class="nav-item">
-            <i class="fa-solid fa-house"></i> Tableau de bord
-        </a>
         <a href="#" class="nav-item active">
             <i class="fa-solid fa-book-open"></i> Modules Assignés
         </a>
-	<a href="#" class="nav-item" data-bs-toggle="modal" data-bs-target="#addModuleModal">
+        <a href="#" class="nav-item" data-bs-toggle="modal" data-bs-target="#addModuleModal">
             <i class="fa-solid fa-plus"></i> Ajouter un module
-        </a>
-        <a href="#" class="nav-item">
-            <i class="fa-solid fa-clock-rotate-left"></i> Historique
         </a>
 
         <div class="sidebar-bottom">
             <div class="brand-logo" style="font-size: 1rem; margin-bottom: 0;">
-                <i class="fa-solid fa-leaf"></i> Schneider<br>Electric
+                <i class="fa-solid fa-gear"></i> Banc essaie<br>KNX
             </div>
         </div>
     </aside>
+        </div>
 
     <main class="main-content">
         <header class="topbar">
@@ -289,7 +285,7 @@
                         <!-- Image du module -->
                         <div class="module-img-placeholder" style="height: 120px;">
                             {% if module.image_path %}
-                                <img src="{{ module.image_path }}" alt="{{ module.name }}" style="max-height: 100%; max-width: 100%; object-fit: contain;">
+                                <img src="{{ module.image_path }}" alt="{{ module.name }}" style="max-height: 100%; max-width: 100%; object-fit: contain; font-size: 0.8rem;" onerror="this.outerHTML='<i class=\'fa-solid fa-image-slash text-muted fs-1\'></i>'">
                             {% else %}
                                 <i class="fa-solid fa-server text-muted"></i>
                             {% endif %}
