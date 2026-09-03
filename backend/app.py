@@ -3,6 +3,8 @@ import io
 import os
 import uuid
 
+from functools import wraps
+
 from flask import Flask, request, send_file, jsonify, session, render_template, redirect
 import mysql.connector
 import qrcode
@@ -36,11 +38,41 @@ def get_db_connection():
 
 
 # ---------------------------------------------------------------------------
+# Helpers de sécurité
+# ---------------------------------------------------------------------------
+def require_login(view_func):
+    @wraps(view_func)
+    def wrapped(*args, **kwargs):
+        if not session.get('user'):
+            return redirect('/login')
+        return view_func(*args, **kwargs)
+    return wrapped
+
+
+def require_admin(view_func):
+    @wraps(view_func)
+    def wrapped(*args, **kwargs):
+        if session.get('role') != 'admin':
+            return redirect('/admin')
+        return view_func(*args, **kwargs)
+    return wrapped
+
+
+# ---------------------------------------------------------------------------
 # Page d'accueil
 # ---------------------------------------------------------------------------
 @app.route('/')
 def accueil():
     return render_template('index.html')
+
+
+# ---------------------------------------------------------------------------
+# Déconnexion
+# ---------------------------------------------------------------------------
+@app.route('/logout')
+def logout():
+    session.clear()
+    return redirect('/')
 
 
 # ---------------------------------------------------------------------------
@@ -54,15 +86,19 @@ def register():
 # ---------------------------------------------------------------------------
 # Espace formateur : création d'un compte apprenti + QR code d'enrôlement
 # ---------------------------------------------------------------------------
+@app.route('/admin')
+def admin_index():
+    if session.get('role') == 'admin':
+        return redirect('/admin/creer-apprenti')
+    return render_template('admin.html')
+
+
 @app.route('/admin/creer-apprenti', methods=['GET', 'POST'])
+@require_admin
 def creer_apprenti():
-    html_form = """
-    <h2>Créer un accès pour un apprenti</h2>
-    <form method="POST">
-        Nom de l'apprenti : <input type="text" name="username" required>
-        <button type="submit">Générer le QR Code</button>
-    </form>
-    """
+    qr_url = None
+    lien_enrolement = None
+    apprenti_nom = None
 
     if request.method == 'POST':
         username = request.form['username']
@@ -78,23 +114,29 @@ def creer_apprenti():
             conn.commit()
 
             lien_enrolement = f"https://{request.host}/enroll?token={token}"
-
-            return f"""
-            <h3>Compte créé pour {username} !</h3>
-            <p>Demandez à l'apprenti de scanner ce QR Code ou copiez le lien ci-dessous :</p>
-            <img src="/api/qrcode?data={lien_enrolement}" alt="QR Code d'enrôlement">
-            <br>
-            <a href="{lien_enrolement}" target="_blank">Lien direct d'enrôlement</a>
-            <br><br>
-            <a href="/admin/creer-apprenti">Créer un autre compte</a>
-            """
+            apprenti_nom = username
+            qr_url = f"/api/qrcode?data={lien_enrolement}"
         except mysql.connector.Error as err:
-            return f"Erreur : Ce nom d'apprenti existe peut-être déjà. ({err})"
+            return render_template(
+                'admin_apprenti.html',
+                error=f"Erreur : Ce nom d'apprenti existe peut-être déjà. ({err})",
+                qr_url=None,
+                lien_enrolement=None,
+                apprenti_nom=None,
+                current_user=session.get('user')
+            )
         finally:
             cursor.close()
             conn.close()
 
-    return html_form
+    return render_template(
+        'admin_apprenti.html',
+        error=None,
+        qr_url=qr_url,
+        lien_enrolement=lien_enrolement,
+        apprenti_nom=apprenti_nom,
+        current_user=session.get('user')
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -314,10 +356,10 @@ def webauthn_login_verify():
         (user_id,)
     )
     row = cursor.fetchone()
-    cursor.close()
-    conn.close()
 
     if not row:
+        cursor.close()
+        conn.close()
         return jsonify({"status": "error", "message": "Clé introuvable."}), 400
 
     credential_id_db = row[0]
@@ -334,10 +376,20 @@ def webauthn_login_verify():
             credential_current_sign_count=sign_count_db,
         )
 
-        session['user'] = username
+        cursor.execute("SELECT username, role FROM users WHERE id = %s", (user_id,))
+        user_data = cursor.fetchone()
+
+        if user_data:
+            session['user'] = user_data[0]
+            session['role'] = user_data[1]
+
+        cursor.close()
+        conn.close()
         return jsonify({"status": "ok", "message": "Connexion réussie !"})
 
     except Exception as e:
+        cursor.close()
+        conn.close()
         return jsonify({"status": "error", "message": str(e)}), 400
 
 
@@ -420,11 +472,8 @@ def ajouter_module():
 # Page de documentation (accessible une fois connecté)
 # ---------------------------------------------------------------------------
 @app.route('/docs')
+@require_login
 def docs_page():
-    # En production, on vérifierait ici si l'utilisateur est bien connecté
-    # if 'user' not in session:
-    #     return redirect('/login')
-
     conn = get_db_connection()
     # Le paramètre dictionary=True permet de récupérer les résultats sous forme de dictionnaire
     cursor = conn.cursor(dictionary=True) 
@@ -441,7 +490,7 @@ def docs_page():
     conn.close()
 
     # On envoie la variable 'modules' au template HTML
-    return render_template('docs.html', modules=modules)
+    return render_template('docs.html', modules=modules, current_user=session.get('user'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)

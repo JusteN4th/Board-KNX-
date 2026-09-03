@@ -251,9 +251,12 @@
 
     <main class="main-content">
         <header class="topbar">
-            <div class="user-profile">
-                <i class="fa-solid fa-circle-user fs-4"></i>
-                Apprenti Nathan B. <i class="fa-solid fa-chevron-down ms-1 fs-6"></i>
+            <div class="user-profile d-flex align-items-center gap-3">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-circle-user fs-4"></i>
+                    <span>{{ current_user or 'Utilisateur' }}</span>
+                </div>
+                <a href="/logout" class="btn btn-sm btn-outline-secondary rounded-pill">Déconnexion</a>
             </div>
         </header>
 
