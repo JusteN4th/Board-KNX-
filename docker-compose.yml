@@ -31,7 +31,9 @@ services:
       - db
     networks:
       - klx_network
-
+    volumes:
+      # Synchronise le dossier static de ton PC avec celui du conteneur
+      - ./backend/static:/app/static
   # 3. Conteneur Reverse Proxy (Nginx pour le HTTPS)
   proxy:
     image: nginx:alpine

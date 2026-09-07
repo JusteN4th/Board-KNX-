@@ -2,6 +2,7 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Espace Apprenti - Banc KLX</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -25,7 +26,6 @@
             overflow: hidden;
         }
 
-        /* --- Barre latérale (Sidebar) --- */
         .sidebar {
             width: 260px;
             background-color: var(--sidebar-bg);
@@ -47,10 +47,9 @@
             align-items: center;
             gap: 10px;
         }
-/* Rendre la carte relative pour positionner la croix */
+
         .module-card {
             position: relative;
-            /* Le reste de ton code .module-card reste identique... */
             background: var(--card-bg);
             border-radius: 12px;
             padding: 20px;
@@ -62,7 +61,6 @@
             height: 100%;
         }
 
-        /* Style de la croix rouge */
         .btn-delete-module {
             position: absolute;
             top: -10px;
@@ -86,6 +84,7 @@
             background-color: #bb2d3b;
             transform: scale(1.1);
         }
+
         .nav-item {
             padding: 12px 20px;
             color: var(--text-dark);
@@ -109,7 +108,6 @@
             padding: 20px;
         }
 
-        /* --- Contenu Principal --- */
         .main-content {
             flex: 1;
             display: flex;
@@ -117,7 +115,6 @@
             overflow-y: auto;
         }
 
-        /* --- Barre supérieure (Topbar) --- */
         .topbar {
             display: flex;
             justify-content: flex-end;
@@ -134,7 +131,6 @@
             cursor: pointer;
         }
 
-        /* --- Zone de recherche et Grille --- */
         .content-area {
             padding: 0 30px 30px 30px;
         }
@@ -160,19 +156,6 @@
             color: #6c757d;
         }
 
-        /* --- Cartes Modules --- */
-        .module-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-            border: 1px solid #e9ecef;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-
         .module-title {
             font-size: 0.9rem;
             font-weight: 700;
@@ -190,18 +173,11 @@
             font-size: 3rem;
         }
 
-        /* Images simulées pour les modules (remplace par les vraies src) */
-        .module-img {
-            max-height: 100px;
-            object-fit: contain;
-            margin-bottom: 15px;
-        }
-
         .module-tp-info {
             font-size: 0.8rem;
             color: #495057;
             margin-bottom: 15px;
-            margin-top: auto; /* Pousse le bouton vers le bas */
+            margin-top: auto; 
         }
 
         .btn-docs {
@@ -224,7 +200,6 @@
 </head>
 <body>
 
-<!-- Barre latérale -->
     <aside class="sidebar">
         <div class="brand-logo">
             <i class="fa-solid fa-gear"></i> Banc essaie<br>KNX
@@ -233,9 +208,12 @@
         <a href="#" class="nav-item active">
             <i class="fa-solid fa-book-open"></i> Modules Assignés
         </a>
+        
+        {% if role == 'admin' %}
         <a href="#" class="nav-item" data-bs-toggle="modal" data-bs-target="#addModuleModal">
             <i class="fa-solid fa-plus"></i> Ajouter un module
         </a>
+        {% endif %}
 
         <div class="sidebar-bottom">
             <div class="brand-logo" style="font-size: 1rem; margin-bottom: 0;">
@@ -243,7 +221,6 @@
             </div>
         </div>
     </aside>
-        </div>
 
     <main class="main-content">
         <header class="topbar">
@@ -252,49 +229,43 @@
                     <i class="fa-solid fa-circle-user fs-4"></i>
                     <span>{{ current_user or 'Utilisateur' }}</span>
                 </div>
+                {% if role == 'admin' %}
+                <a href="/admin/creer-apprenti" class="btn btn-sm btn-primary rounded-pill">Panel Formateur</a>
+                {% endif %}
                 <a href="/logout" class="btn btn-sm btn-outline-secondary rounded-pill">Déconnexion</a>
             </div>
         </header>
 
         <div class="content-area">
-            
             <div class="search-container">
                 <i class="fa-solid fa-magnifying-glass"></i>
                 <input type="text" id="searchInput" placeholder="Rechercher un module...">
             </div>
 
-<!-- Grille des modules dynamique -->
-<!-- Grille des modules dynamique -->
             <div class="row g-4">
-                
-                <!-- Boucle Jinja2 : on parcourt chaque module -->
                 {% for module in modules %}
                 <div class="col-md-4">
                     <div class="module-card">
-                        
-                        <!-- Formulaire de suppression avec demande de confirmation -->
+                        {% if role == 'admin' %}
                         <form action="/supprimer-module/{{ module.id }}" method="POST" onsubmit="return confirm('Êtes-vous sûr de vouloir supprimer définitivement ce module ?');">
                             <button type="submit" class="btn-delete-module" title="Supprimer ce module">
                                 <i class="fa-solid fa-xmark"></i>
                             </button>
                         </form>
+                        {% endif %}
 
-                        <!-- Titre du module -->
                         <div class="module-title">{{ module.name }}</div>
                         
-                        <!-- Image du module -->
                         <div class="module-img-placeholder" style="height: 120px;">
                             {% if module.image_path %}
-                                <img src="{{ module.image_path }}" alt="{{ module.name }}" style="max-height: 100%; max-width: 100%; object-fit: contain; font-size: 0.8rem;" onerror="this.outerHTML='<i class=\'fa-solid fa-image-slash text-muted fs-1\'></i>'">
+                                <img src="{{ module.image_path }}" alt="{{ module.name }}" style="max-height: 100%; max-width: 100%; object-fit: contain;" onerror="this.outerHTML='<i class=\'fa-solid fa-image-slash text-muted fs-1\'></i>'">
                             {% else %}
                                 <i class="fa-solid fa-server text-muted"></i>
                             {% endif %}
                         </div>
 
-                        <!-- Info TP -->
                         <div class="module-tp-info">{{ module.description }}</div>
                         
-                        <!-- Lien vers la documentation PDF -->
                         {% if module.doc_path %}
                             <a href="{{ module.doc_path }}" target="_blank" class="btn btn-dark w-100 btn-docs" style="border-radius: 20px;">
                                 Voir Documentation (PDF)
@@ -309,11 +280,11 @@
                     <p>Aucun module n'est disponible pour le moment.</p>
                 </div>
                 {% endfor %}
-
             </div>
         </div>
     </main>
-<!-- Fenêtre Modale pour Ajouter un Module -->
+
+    {% if role == 'admin' %}
     <div class="modal fade" id="addModuleModal" tabindex="-1" aria-labelledby="addModuleModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -348,25 +319,19 @@
             </div>
         </div>
     </div>
+    {% endif %}
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-	<script>
-        // Écoute chaque frappe au clavier dans la barre de recherche
+    <script>
         document.getElementById('searchInput').addEventListener('input', function(e) {
-            // Récupère le texte tapé et le met en minuscules
             const termeRecherche = e.target.value.toLowerCase();
-            
-            // Sélectionne toutes les cartes de la page
             const cartes = document.querySelectorAll('.module-card');
 
             cartes.forEach(carte => {
-                // Récupère le titre et la description de chaque module
                 const titre = carte.querySelector('.module-title').textContent.toLowerCase();
                 const description = carte.querySelector('.module-tp-info').textContent.toLowerCase();
-                
-                // Cible la colonne Bootstrap (.col-md-4) qui contient la carte pour la masquer entièrement
                 const colonne = carte.parentElement;
 
-                // Si le texte tapé se trouve dans le titre ou la description, on affiche, sinon on masque
                 if (titre.includes(termeRecherche) || description.includes(termeRecherche)) {
                     colonne.style.display = '';
                 } else {

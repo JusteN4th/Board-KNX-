@@ -40,3 +40,36 @@ INSERT INTO modules (name, description) VALUES
 ('MODULE STATION MÉTÉO MD1A3028', 'Assigné pour TP : TP #12 Câblage KNX'),
 ('MODULE DALI GATEWAY MD1A3020', 'Assigné pour TP : TP #12 Câblage KNX'),
 ('MODULE VARIATEUR MD1A3046', 'Assigné pour TP : TP #14 Paramétrage');
+
+-- Table des classes
+CREATE TABLE IF NOT EXISTS classes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE
+);
+
+-- Association Utilisateurs <-> Classes
+CREATE TABLE IF NOT EXISTS user_classes (
+    user_id INT,
+    class_id INT,
+    PRIMARY KEY (user_id, class_id),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+);
+
+-- Permissions de visibilité des modules pour une CLASSE
+CREATE TABLE IF NOT EXISTS module_visibility_classes (
+    module_id INT,
+    class_id INT,
+    PRIMARY KEY (module_id, class_id),
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
+    FOREIGN KEY (class_id) REFERENCES classes(id) ON DELETE CASCADE
+);
+
+-- Permissions de visibilité des modules pour un UTILISATEUR SPÉCIFIQUE
+CREATE TABLE IF NOT EXISTS module_visibility_users (
+    module_id INT,
+    user_id INT,
+    PRIMARY KEY (module_id, user_id),
+    FOREIGN KEY (module_id) REFERENCES modules(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
