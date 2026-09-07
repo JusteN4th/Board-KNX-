@@ -1,4 +1,3 @@
-Markdown
 # 🚀 Système d'Information et de Documentation - Banc KLX
 
 [![Statut](https://img.shields.io/badge/Statut-En%20D%C3%A9veloppement-orange)](#)
@@ -77,4 +76,5 @@ Le code est documenté (PEP 8) et structuré.
 Un rapport global du projet (synthétisant les besoins, l'organisation, la réalisation et la rétrospective) sera inclus dans le dossier /docs pour la revue finale.
 
 👥 Contributeurs
-Nathan Bussolaro - Développement, Réseau, et Sécurité (BTS CIEL)
+Nathan Bussolaro - (BTS CIEL)
+Yanis Boussaid - (BTS CIEL)
