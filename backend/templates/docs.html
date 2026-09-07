@@ -265,7 +265,11 @@
                         </div>
 
                         <div class="module-tp-info">{{ module.description }}</div>
-                        
+			{% if module.comment %}
+                        <div class="module-comment mt-2 p-2 text-muted rounded" style="background-color: #f8f9fa; font-size: 0.85rem; border-left: 3px solid #198754; text-align: left;">
+                            <i class="fa-solid fa-comment-dots"></i> {{ module.comment }}
+                        </div>
+                        {% endif %}                        
                         {% if module.doc_path %}
                             <a href="{{ module.doc_path }}" target="_blank" class="btn btn-dark w-100 btn-docs" style="border-radius: 20px;">
                                 Voir Documentation (PDF)
@@ -301,6 +305,10 @@
                         <div class="mb-3">
                             <label class="form-label">Description / TP Assigné</label>
                             <input type="text" class="form-control" name="description" placeholder="Ex: Assigné pour TP #15" required>
+                        </div>
+			<div class="mb-3">
+                            <label class="form-label">Commentaire du formateur (Optionnel)</label>
+                            <textarea class="form-control" name="comment" rows="2" placeholder="Notes, consignes particulières..."></textarea>
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Image du module (PNG/JPG)</label>

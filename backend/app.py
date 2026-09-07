@@ -26,6 +26,8 @@ ORIGIN = "https://projetdocuyanisnathan.fr"
 # ---------------------------------------------------------------------------
 # Connexion à la base de données MySQL (avec encodage UTF-8 forcé)
 # ---------------------------------------------------------------------------
+
+
 def get_db_connection():
     return mysql.connector.connect(
         host=os.environ.get('DB_HOST', 'db'),
@@ -39,6 +41,8 @@ def get_db_connection():
 # ---------------------------------------------------------------------------
 # Helpers de sécurité
 # ---------------------------------------------------------------------------
+
+
 def require_login(view_func):
     @wraps(view_func)
     def wrapped(*args, **kwargs):
@@ -46,6 +50,7 @@ def require_login(view_func):
             return redirect('/login')
         return view_func(*args, **kwargs)
     return wrapped
+
 
 def require_admin(view_func):
     @wraps(view_func)
@@ -58,14 +63,18 @@ def require_admin(view_func):
 # ---------------------------------------------------------------------------
 # Page d'accueil & Déconnexion
 # ---------------------------------------------------------------------------
+
+
 @app.route('/')
 def accueil():
     return render_template('index.html')
+
 
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect('/')
+
 
 @app.route('/register')
 def register():
@@ -74,11 +83,14 @@ def register():
 # ---------------------------------------------------------------------------
 # Espace formateur : Tableau de bord principal
 # ---------------------------------------------------------------------------
+
+
 @app.route('/admin')
 def admin_index():
     if session.get('role') == 'admin':
         return redirect('/admin/creer-apprenti')
     return render_template('admin.html')
+
 
 @app.route('/admin/creer-apprenti', methods=['GET', 'POST'])
 @require_admin
@@ -94,7 +106,7 @@ def creer_apprenti():
     if request.method == 'POST':
         prenom = request.form.get('prenom')
         nom = request.form.get('nom')
-        
+
         if prenom and nom:
             username = f"{prenom.strip().capitalize()} {nom.strip().upper()}"
             token = str(uuid.uuid4())
@@ -138,16 +150,20 @@ def creer_apprenti():
 # ---------------------------------------------------------------------------
 # Routes de gestion du panel formateur (Classes & Utilisateurs)
 # ---------------------------------------------------------------------------
+
+
 @app.route('/admin/promote/<int:target_user_id>', methods=['POST'])
 @require_admin
 def promote_user(target_user_id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("UPDATE users SET role = 'admin' WHERE id = %s", (target_user_id,))
+    cursor.execute(
+        "UPDATE users SET role = 'admin' WHERE id = %s", (target_user_id,))
     conn.commit()
     cursor.close()
     conn.close()
     return redirect('/admin/creer-apprenti')
+
 
 @app.route('/admin/reset-key/<int:target_user_id>', methods=['POST'])
 @require_admin
@@ -156,15 +172,18 @@ def reset_key(target_user_id):
     conn = get_db_connection()
     cursor = conn.cursor()
     # On supprime l'ancienne passkey et on génère un token d'enrôlement neuf
-    cursor.execute("DELETE FROM passkeys WHERE user_id = %s", (target_user_id,))
-    cursor.execute("UPDATE users SET enrollment_token = %s WHERE id = %s", (token, target_user_id))
+    cursor.execute("DELETE FROM passkeys WHERE user_id = %s",
+                   (target_user_id,))
+    cursor.execute(
+        "UPDATE users SET enrollment_token = %s WHERE id = %s", (token, target_user_id))
     conn.commit()
-    
-    cursor.execute("SELECT username FROM users WHERE id = %s", (target_user_id,))
+
+    cursor.execute("SELECT username FROM users WHERE id = %s",
+                   (target_user_id,))
     user = cursor.fetchone()
     cursor.close()
     conn.close()
-    
+
     # Redirige avec le lien d'enrôlement direct pour l'admin
     lien = f"https://{request.host}/enroll?token={token}"
     return f"""
@@ -186,6 +205,7 @@ def reset_key(target_user_id):
     </html>
     """
 
+
 @app.route('/admin/class/create', methods=['POST'])
 @require_admin
 def create_class():
@@ -203,6 +223,7 @@ def create_class():
             conn.close()
     return redirect('/admin/creer-apprenti')
 
+
 @app.route('/admin/class/assign', methods=['POST'])
 @require_admin
 def assign_class():
@@ -212,7 +233,8 @@ def assign_class():
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
-            cursor.execute("INSERT INTO user_classes (user_id, class_id) VALUES (%s, %s)", (user_id, class_id))
+            cursor.execute(
+                "INSERT INTO user_classes (user_id, class_id) VALUES (%s, %s)", (user_id, class_id))
             conn.commit()
         except:
             pass
@@ -221,21 +243,24 @@ def assign_class():
             conn.close()
     return redirect('/admin/creer-apprenti')
 
+
 @app.route('/admin/module/permit', methods=['POST'])
 @require_admin
 def permit_module():
     module_id = request.form.get('module_id')
     target_type = request.form.get('target_type')
     target_id = request.form.get('target_id')
-    
+
     if module_id and target_type and target_id:
         conn = get_db_connection()
         cursor = conn.cursor()
         try:
             if target_type == 'user':
-                cursor.execute("INSERT INTO module_visibility_users (module_id, user_id) VALUES (%s, %s)", (module_id, target_id))
+                cursor.execute(
+                    "INSERT INTO module_visibility_users (module_id, user_id) VALUES (%s, %s)", (module_id, target_id))
             elif target_type == 'class':
-                cursor.execute("INSERT INTO module_visibility_classes (module_id, class_id) VALUES (%s, %s)", (module_id, target_id))
+                cursor.execute(
+                    "INSERT INTO module_visibility_classes (module_id, class_id) VALUES (%s, %s)", (module_id, target_id))
             conn.commit()
         except:
             pass
@@ -243,6 +268,7 @@ def permit_module():
             cursor.close()
             conn.close()
     return redirect('/admin/creer-apprenti')
+
 
 @app.route('/api/qrcode')
 def generer_qr():
@@ -256,6 +282,8 @@ def generer_qr():
 # ---------------------------------------------------------------------------
 # WebAuthn & Connexion
 # ---------------------------------------------------------------------------
+
+
 @app.route('/api/webauthn/register/options', methods=['POST'])
 def webauthn_register_options():
     data = request.get_json()
@@ -271,6 +299,7 @@ def webauthn_register_options():
     )
     session['challenge'] = bytes_to_base64url(options.challenge)
     return options_to_json(options), 200, {'Content-Type': 'application/json'}
+
 
 @app.route('/api/webauthn/register/verify', methods=['POST'])
 def webauthn_register_verify():
@@ -293,13 +322,15 @@ def webauthn_register_verify():
             "INSERT INTO passkeys (user_id, credential_id, public_key, sign_count) VALUES (%s, %s, %s, %s)",
             (user_id, credential_id_b64, public_key_b64, verification.sign_count)
         )
-        cursor.execute("UPDATE users SET enrollment_token = NULL WHERE id = %s", (user_id,))
+        cursor.execute(
+            "UPDATE users SET enrollment_token = NULL WHERE id = %s", (user_id,))
         conn.commit()
         cursor.close()
         conn.close()
         return jsonify({"status": "ok", "message": "Clé d'accès enregistrée avec succès !"})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 400
+
 
 @app.route('/api/webauthn/login/options', methods=['POST'])
 def webauthn_login_options():
@@ -317,7 +348,8 @@ def webauthn_login_options():
         return jsonify({"status": "error", "message": "Utilisateur inconnu."}), 400
 
     user_id = user[0]
-    cursor.execute("SELECT credential_id, public_key, sign_count FROM passkeys WHERE user_id = %s", (user_id,))
+    cursor.execute(
+        "SELECT credential_id, public_key, sign_count FROM passkeys WHERE user_id = %s", (user_id,))
     passkeys = cursor.fetchall()
 
     if not passkeys:
@@ -325,14 +357,17 @@ def webauthn_login_options():
         conn.close()
         return jsonify({"status": "error", "message": "Aucune clé d'accès enregistrée."}), 400
 
-    allowed_credentials = [PublicKeyCredentialDescriptor(id=base64url_to_bytes(pk[0])) for pk in passkeys]
-    options = generate_authentication_options(rp_id=RP_ID, allow_credentials=allowed_credentials)
+    allowed_credentials = [PublicKeyCredentialDescriptor(
+        id=base64url_to_bytes(pk[0])) for pk in passkeys]
+    options = generate_authentication_options(
+        rp_id=RP_ID, allow_credentials=allowed_credentials)
     session['challenge'] = bytes_to_base64url(options.challenge)
     session['login_user_id'] = user_id
 
     cursor.close()
     conn.close()
     return options_to_json(options), 200, {'Content-Type': 'application/json'}
+
 
 @app.route('/api/webauthn/login/verify', methods=['POST'])
 def webauthn_login_verify():
@@ -344,7 +379,8 @@ def webauthn_login_verify():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT credential_id, public_key, sign_count FROM passkeys WHERE user_id = %s", (user_id,))
+    cursor.execute(
+        "SELECT credential_id, public_key, sign_count FROM passkeys WHERE user_id = %s", (user_id,))
     row = cursor.fetchone()
 
     if not row:
@@ -364,13 +400,14 @@ def webauthn_login_verify():
             credential_public_key=base64url_to_bytes(public_key_db),
             credential_current_sign_count=sign_count_db,
         )
-        cursor.execute("SELECT username, role FROM users WHERE id = %s", (user_id,))
+        cursor.execute(
+            "SELECT username, role FROM users WHERE id = %s", (user_id,))
         user_data = cursor.fetchone()
 
         if user_data:
             session['user'] = user_data[0]
             session['role'] = user_data[1]
-            session['user_id'] = user_id 
+            session['user_id'] = user_id
 
         cursor.close()
         conn.close()
@@ -380,9 +417,11 @@ def webauthn_login_verify():
         conn.close()
         return jsonify({"status": "error", "message": str(e)}), 400
 
+
 @app.route('/login')
 def login_page():
     return render_template('login.html')
+
 
 @app.route('/enroll')
 def enroll():
@@ -392,7 +431,8 @@ def enroll():
 
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT id, username FROM users WHERE enrollment_token = %s", (token,))
+    cursor.execute(
+        "SELECT id, username FROM users WHERE enrollment_token = %s", (token,))
     user = cursor.fetchone()
     cursor.close()
     conn.close()
@@ -456,6 +496,8 @@ def enroll():
 # ---------------------------------------------------------------------------
 # Gestion des modules
 # ---------------------------------------------------------------------------
+
+
 @app.route('/supprimer-module/<int:module_id>', methods=['POST'])
 @require_admin
 def supprimer_module(module_id):
@@ -467,6 +509,7 @@ def supprimer_module(module_id):
     conn.close()
     return redirect('/docs')
 
+
 @app.route('/ajouter-module', methods=['POST'])
 @require_admin
 def ajouter_module():
@@ -474,52 +517,57 @@ def ajouter_module():
     description = request.form.get('description')
     image_file = request.files.get('image')
     doc_file = request.files.get('document')
+    comment = request.form.get('comment', '')
 
     if image_file and doc_file:
         img_filename = secure_filename(image_file.filename)
         doc_filename = secure_filename(doc_file.filename)
-        
+
         img_save_path = os.path.join('static', 'img', img_filename)
         doc_save_path = os.path.join('static', 'docs', doc_filename)
-        
+
         os.makedirs(os.path.dirname(img_save_path), exist_ok=True)
         os.makedirs(os.path.dirname(doc_save_path), exist_ok=True)
-        
+
         image_file.save(img_save_path)
         doc_file.save(doc_save_path)
-        
+
         conn = get_db_connection()
         cursor = conn.cursor()
-        
+
+# 1. D'abord, insérer le module avec le commentaire
         cursor.execute(
-            "INSERT INTO modules (name, description, image_path) VALUES (%s, %s, %s)",
-            (name, description, f"/static/img/{img_filename}")
+            "INSERT INTO modules (name, description, image_path, comment) VALUES (%s, %s, %s, %s)",
+            (name, description, f"/static/img/{img_filename}", comment)
         )
-        module_id = cursor.lastrowid 
         
+        # 2. Ensuite, récupérer l'ID généré pour ce module
+        module_id = cursor.lastrowid
+        
+        # 3. Enfin, insérer la documentation liée à cet ID
         cursor.execute(
             "INSERT INTO documentation (module_id, title, file_path) VALUES (%s, %s, %s)",
             (module_id, f"Doc {name}", f"/static/docs/{doc_filename}")
         )
-        
-        conn.commit()
-        cursor.close()
-        conn.close()
+    conn.commit()
+    cursor.close()
+    conn.close()
 
     return redirect('/docs')
+
 
 @app.route('/docs')
 @require_login
 def docs_page():
     user_id = session.get('user_id')
     role = session.get('role')
-    
+
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True) 
-    
+    cursor = conn.cursor(dictionary=True)
+
     if role == 'admin':
         requete = """
-            SELECT m.id, m.name, m.description, m.image_path, d.file_path AS doc_path 
+            SELECT m.id, m.name, m.description, m.image_path, m.comment, d.file_path AS doc_path 
             FROM modules m 
             LEFT JOIN documentation d ON m.id = d.module_id
         """
@@ -535,12 +583,13 @@ def docs_page():
             WHERE mvu.user_id = %s OR uc.user_id = %s
         """
         cursor.execute(requete, (user_id, user_id))
-        
+
     modules = cursor.fetchall()
     cursor.close()
     conn.close()
 
     return render_template('docs.html', modules=modules, current_user=session.get('user'), role=role)
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
