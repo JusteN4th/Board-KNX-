@@ -77,4 +77,4 @@ Le projet repose sur une architecture micro-services gérée par **Docker** :
 * Un **rapport global du projet** (synthétisant les besoins, l'organisation, la réalisation et la rétrospective) sera inclus dans le dossier `/docs` pour la revue finale.
 
 ## 👥 Contributeurs
-* **[Votre Nom / Équipe]** - *Développement, Réseau, et Sécurité*
+* **Yanis & Nathan** - *Développement, Réseau, et Sécurité*
