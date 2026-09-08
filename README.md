@@ -1,6 +1,6 @@
 # 🚀 Système d'Information et de Documentation - Banc KLX
 
-[![Statut](https://img.shields.io/badge/Statut-En%20D%C3%A9veloppement-orange)](#)
+[![Statut](https://img.shields.io/badge/Statut-OK-green)](#)
 [![Docker](https://img.shields.io/badge/Docker-Supported-blue)](#)
 [![License](https://img.shields.io/badge/License-Propri%C3%A9taire-red)](#)
 
